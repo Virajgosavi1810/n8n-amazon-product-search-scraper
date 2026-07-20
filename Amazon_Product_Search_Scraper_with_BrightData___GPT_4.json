@@ -1,0 +1,474 @@
+{
+  "name": "Amazon Product Search Scraper with BrightData & GPT-4",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1",
+        "options": {}
+      },
+      "id": "aec6009a-bbcc-474e-a7f9-fbbc3d278257",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "position": [
+        360,
+        360
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openRouterApi": {
+          "id": "AlStgKEm2jUZPzQC",
+          "name": "OpenRouter account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"array\",\n  \"items\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"name\": { \"type\": \"string\" },\n      \"description\": { \"type\": \"string\" },\n      \"rating\": { \"type\": \"number\" },\n      \"reviews\": { \"type\": \"integer\" },\n      \"price\": { \"type\": \"string\" }\n    },\n    \"required\": [\"name\", \"description\", \"rating\", \"reviews\", \"price\"]\n  }\n}"
+      },
+      "id": "604cfa49-9a8c-4358-8294-325b8abf7aab",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        740,
+        380
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brightdata.com/request",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer f50230c367b59b3f30a4115c13ce3d6298ffec782db1bc66f2d75d37b503e591"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "zone",
+              "value": "web_unlocker1"
+            },
+            {
+              "name": "url",
+              "value": "={{ $json.url }}"
+            },
+            {
+              "name": "format",
+              "value": "raw"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b03e1192-563a-46eb-b4c9-7a0fcf3af20e",
+      "name": "scrap url",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        80,
+        200
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "content": "## Web Scraper API\n\n[Inscription - Free Trial](https://get.brightdata.com/website-scraper)"
+      },
+      "id": "a5db0a7c-0c91-41b8-8e51-20fbe75f9bf5",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "c0b9212a-ddf1-467a-aeeb-b3081e72251f",
+      "name": "When clicking ‘Test workflow’",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        -600,
+        340
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "870c7ebd-ac60-4601-bed0-ba710fee2afe",
+      "name": "url",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        -140,
+        340
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1nT446qfSueLqL-BtCSTmtqY2X91CNS0Cq5G-n7tv9Qk",
+          "mode": "list",
+          "cachedResultName": "N8N Agents Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nT446qfSueLqL-BtCSTmtqY2X91CNS0Cq5G-n7tv9Qk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 692393816,
+          "mode": "list",
+          "cachedResultName": "track",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nT446qfSueLqL-BtCSTmtqY2X91CNS0Cq5G-n7tv9Qk/edit#gid=692393816"
+        },
+        "options": {}
+      },
+      "id": "60c18ee0-5414-4d4d-84a2-a34e7bfe1e85",
+      "name": "get urls to scrape",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -360,
+        340
+      ],
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jZnh1sek0aDJgXgc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// CleanHtmlFunction.js\n// Purpose: n8n Function node to clean HTML: remove doctype, scripts, styles, head, comments, classes, extra blank lines, and non-whitelisted tags\n\n// 1) Grab all incoming items\nconst items = $input.all();\n\nreturn items.map(item => {\n  // 2) Pull raw HTML from the correct property (adjust as needed)\n  const rawHtml = item.json.data || '';  \n\n  // 3) Initialize result\n  let cleaned = '';\n\n  try {\n    // a) Strip doctype, scripts, styles, comments, head, and class attributes\n    cleaned = rawHtml\n      .replace(/<!doctype html>/gi, '')\n      .replace(/<script[\\s\\S]*?<\\/script>/gi, '')\n      .replace(/<style[\\s\\S]*?<\\/style>/gi, '')\n      .replace(/<!--[\\s\\S]*?-->/g, '')\n      .replace(/<head[\\s\\S]*?<\\/head>/gi, '')\n      .replace(/\\sclass=\"[^\"]*\"/gi, '');\n\n    // b) Whitelist of tags to keep\n    const allowedTags = [\n      'h1','h2','h3','h4','h5','h6',\n      'p','ul','ol','li',\n      'strong','em','a','blockquote',\n      'code','pre'\n    ];\n\n    // c) Remove all other tags\n    cleaned = cleaned.replace(\n      /<\\/?([a-z][a-z0-9]*)\\b[^>]*>/gi,\n      (match, tagName) => {\n        const name = tagName.toLowerCase();\n        if (allowedTags.includes(name)) {\n          return match.startsWith('</') ? `</${name}>` : `<${name}>`;\n        }\n        return '';\n      }\n    );\n\n    // d) Collapse multiple blank lines\n    cleaned = cleaned.replace(/(\\s*\\r?\\n\\s*){2,}/g, '\\n');\n\n    // e) Trim leading/trailing whitespace\n    cleaned = cleaned.trim();\n\n  } catch (error) {\n    // Log any errors and leave cleaned as empty string\n    console.log('HTML Clean Error:', error);\n  }\n\n  // 4) Return only the cleaned HTML\n  return {\n    json: {\n      cleanedHtml: cleaned,\n    },\n  };\n});\n"
+      },
+      "id": "33e08f0d-5c51-4c01-ac65-588da51ed7a4",
+      "name": "clean html",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        300,
+        200
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.cleanedHtml }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an expert in web page scraping. Extract the following product information from the page at \"{{ $('url').item.json.url.split('/s?k=')[1].split('&')[0] }}\". Respond only with a JSON object containing these keys:\n{\n  \"name\": \"<product name>\",\n  \"description\": \"<product description>\",\n  \"rating\": \"<average rating>\",\n  \"reviews\": \"<number of reviews>\",\n  \"price\": \"<current price>\"\n}\n"
+            }
+          ]
+        }
+      },
+      "id": "e1725303-0bcd-446b-b4d0-dba81b0ee4b6",
+      "name": "extract data",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        520,
+        200
+      ],
+      "typeVersion": 1.6
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1nT446qfSueLqL-BtCSTmtqY2X91CNS0Cq5G-n7tv9Qk",
+          "mode": "list",
+          "cachedResultName": "N8N Agents Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nT446qfSueLqL-BtCSTmtqY2X91CNS0Cq5G-n7tv9Qk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 793074665,
+          "mode": "list",
+          "cachedResultName": "results",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nT446qfSueLqL-BtCSTmtqY2X91CNS0Cq5G-n7tv9Qk/edit#gid=793074665"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.output.name }}",
+            "price": "={{ $json.output.price }}",
+            "rating": "={{ $json.output.rating }}",
+            "reviews": "={{ $json.output.reviews }}",
+            "description": "={{ $json.output.description }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reviews",
+              "displayName": "reviews",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "5e6c0f9f-e7ac-46cd-97cd-ae6d8a753573",
+      "name": "add results",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        1120,
+        340
+      ],
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jZnh1sek0aDJgXgc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "id": "179f4fd0-c6de-4833-9d36-2c8190956608",
+      "name": "Split items",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        900,
+        200
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        460,
+        560
+      ],
+      "id": "ea1aac3f-02c0-47d3-ba5e-41b5d66d27f3",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "1VMKjiSJqADW5yc4",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "url": {
+      "main": [
+        [],
+        [
+          {
+            "node": "scrap url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "scrap url": {
+      "main": [
+        [
+          {
+            "node": "clean html",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "clean html": {
+      "main": [
+        [
+          {
+            "node": "extract data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split items": {
+      "main": [
+        [
+          {
+            "node": "add results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "add results": {
+      "main": [
+        [
+          {
+            "node": "url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract data": {
+      "main": [
+        [
+          {
+            "node": "Split items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get urls to scrape": {
+      "main": [
+        [
+          {
+            "node": "url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "extract data",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "get urls to scrape",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "extract data",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c04066f4-612e-4ffd-9677-6444add172b8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3f21aaf8491157c44331f10f943768229b6695aa90fd86fc40ddb60f0a283c31"
+  },
+  "id": "EdSudQIC6WhSIcN1",
+  "tags": [
+    {
+      "createdAt": "2025-06-05T06:58:59.412Z",
+      "updatedAt": "2025-06-05T06:58:59.412Z",
+      "id": "Ba1Vyb7BJb8L5WK7",
+      "name": "ET"
+    },
+    {
+      "createdAt": "2025-06-05T06:58:59.444Z",
+      "updatedAt": "2025-06-05T06:58:59.444Z",
+      "id": "IkoJWBxO2KOLpNNX",
+      "name": "From POC sheet"
+    },
+    {
+      "createdAt": "2025-06-05T14:18:39.974Z",
+      "updatedAt": "2025-06-05T14:18:39.974Z",
+      "id": "hJbnykuhbMGxOCdR",
+      "name": "Cr Remains"
+    },
+    {
+      "createdAt": "2025-10-27T08:56:35.862Z",
+      "updatedAt": "2025-10-27T08:56:35.862Z",
+      "id": "4VGoJKQCTJHU7PTY",
+      "name": "viraj-n8n"
+    }
+  ]
+}
