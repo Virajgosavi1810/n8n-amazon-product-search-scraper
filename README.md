@@ -23,7 +23,7 @@ The workflow demonstrates how AI can transform raw HTML into clean, structured b
 
 # 🖼️ Workflow Layout
 
-![Workflow Architecture](images/amazon-product-search-scraper-using-brightdata.png)
+![Workflow Architecture](images/amazon-product-search-scraper-using-brightdata.PNG)
 
 ---
 
